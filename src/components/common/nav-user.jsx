@@ -5,7 +5,9 @@ import {
   Settings,
   User,
 } from "lucide-react"
-
+import axios from "axios"
+import { useEffect, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import {
   Avatar,
   AvatarFallback,
@@ -26,22 +28,55 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { Link } from "react-router-dom"
-import { useEffect, useState } from "react"
-import { decodedToken } from "@/services/common-services"
+import { API_URL } from "@/services/api"
+
 
 export function NavUser() {
-  const { isMobile } = useSidebar();
-  const [userData, setUserData] = useState({});
-
+  const { isMobile } = useSidebar()
+  const [practitionerData, setPractitionerData] = useState(null)
+  const navigate = useNavigate()
   useEffect(() => {
-    const payloadData = decodedToken();
-    setUserData(payloadData);
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem('authToken')
+        const response = await axios.get(`${API_URL}/praticien/get-info-praticien`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        
+        if (response.data.success) {
+          setPractitionerData(response.data.data)
+        }
+      } catch (error) {
+        console.error("Erreur de récupération des données:", error)
+      }
+    }
+
+    fetchUserData()
   }, [])
 
-  return (
-    
-    ( userData ? <SidebarMenu>
+  const handleLogout = () => {
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('tokenExpiration')
+    localStorage.removeItem('userData')
+  
+    // Utiliser replace pour éviter d'ajouter au stack d'historique
+    navigate('/login', { replace: true })
+  
+    // Nettoyer l'historique du navigateur pour éviter le retour arrière
+    window.history.pushState(null, '', ' /medicalReact/login')
+    window.addEventListener('popstate', () => {
+      window.history.pushState(null, '', ' /medicalReact/login')
+    })
+  
+    // Rechargement (optionnel selon ton besoin)
+    window.location.reload()
+  }
+  
+
+  return practitionerData ? (
+    <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -50,12 +85,19 @@ export function NavUser() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={userData.user_photo || ""} alt={userData.nom || ""} />
-                <AvatarFallback className="rounded-lg">USR</AvatarFallback>
+                <AvatarImage 
+                  src={`${API_URL}/image${practitionerData.profil_photo}` || ""}
+                  alt={`${practitionerData.firstname} ${practitionerData.lastname}`} 
+                />
+                <AvatarFallback className="rounded-lg">
+                  {practitionerData.firstname[0]}{practitionerData.lastname[0]}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{userData.nom} {userData.prenom}</span>
-                <span className="truncate text-xs">{userData.email}</span>
+                <span className="truncate font-semibold">
+                  {practitionerData.firstname} {practitionerData.lastname}
+                </span>
+                <span className="truncate text-xs">{practitionerData.mail}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -69,12 +111,19 @@ export function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={userData.user_photo || ""} alt={userData.nom} />
-                  <AvatarFallback className="rounded-lg">USR</AvatarFallback>
+                  <AvatarImage 
+                    src={`${API_URL}/image${practitionerData.profil_photo}` || ""} 
+                    alt={`${practitionerData.firstname} ${practitionerData.lastname}`} 
+                  />
+                  <AvatarFallback className="rounded-lg">
+                    {practitionerData.firstname[0]}{practitionerData.lastname[0]}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{userData.nom} {userData.prenom}</span>
-                  <span className="truncate text-xs">{userData.email}</span>
+                  <span className="truncate font-semibold">
+                    {practitionerData.firstname} {practitionerData.lastname}
+                  </span>
+                  <span className="truncate text-xs">{practitionerData.mail}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -82,35 +131,32 @@ export function NavUser() {
             <DropdownMenuGroup>
               <Link to="/profil">
                 <DropdownMenuItem>
-                  <User />Profil
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profil</span>
                 </DropdownMenuItem>
               </Link>
               <DropdownMenuItem>
-                <Bell />
-                Notifications
+                <Bell className="mr-2 h-4 w-4" />
+                <span>Notifications</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Settings />
-                Parametres
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Paramètres</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <Link to="/login">
-              <DropdownMenuItem>
-                <LogOut />
-                Log out
-              </DropdownMenuItem>
-            </Link>
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Déconnexion</span>
+            </DropdownMenuItem>
+
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
-    </SidebarMenu> 
-    : (
-      <>
-        <p>
-          N/A
-        </p>
-      </>
-    )) 
+    </SidebarMenu>
+  ) : (
+    <div className="px-4 py-2 text-muted-foreground text-xs">
+      En attente de connexion...
+    </div>
   )
 }

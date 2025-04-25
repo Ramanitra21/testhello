@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Save, Paperclip, SendHorizonal, MessageSquareReply , Undo2, Heart} from 'lucide-react';
-
 // Exemple d'icône trombone en SVG
 const TromboneIcon = () => (
   <svg
@@ -22,7 +21,7 @@ const TromboneIcon = () => (
 
 const Comment = ({ comment, onLike, onSelectReplyTarget }) => {
   return (
-    <div className="w-full mb-6">
+    <div className="w-full mb-6 bg-white p-3 rounded">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm">
           <Avatar>
@@ -214,7 +213,7 @@ const CommentsList = () => {
       ))}
 
       {/* Formulaire de réponse*/}
-      <div className="fixed bottom-0 z-50 w-3/4 px-6 py-2 bg-white">
+      <div className="fixed bottom-20 z-50 w-3/4 md:px-6 py-2 bg-white md:bottom-0">
         <h2 className="flex items-center mb-4 text-xs font-bold text-gray-700">
           {replyForm.targetId ? `Répondre à ${currentTargetName}` : ''}
           {replyForm.targetId && (
